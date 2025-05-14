@@ -30,6 +30,33 @@ int main() {
     }
 
     puts("서버에 연결됨. quit 입력 시 종료");
+    // 로그인 정보 입력
+    char id[50], pw[50];
+    printf("ID 입력: ");
+    fgets(id, sizeof(id), stdin);
+    id[strcspn(id, "\n")] = 0;
+
+    printf("PW 입력: ");
+    fgets(pw, sizeof(pw), stdin);
+    pw[strcspn(pw, "\n")] = 0;
+
+    // 로그인 메시지 전송: ID//PW\n 형태
+    sprintf(msg, "%s//%s\n", id, pw);
+    send(sock, msg, strlen(msg), 0);
+
+    // 로그인 응답 수신
+    int recv_len = recv(sock, msg, BUF_SIZE - 1, 0);
+    msg[recv_len] = 0;
+
+    if (strcmp(msg, "LOGIN_SUCCESS\n") == 0) {
+        printf("로그인 성공!\n");
+    } else {
+        printf("로그인 실패. 종료합니다.\n");
+        closesocket(sock);
+        WSACleanup();
+        return 0;
+    }
+
     _beginthreadex(NULL, 0, RecvMsg, (void*)sock, 0, NULL);
 
     while (1) {
