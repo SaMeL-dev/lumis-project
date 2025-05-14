@@ -1,0 +1,100 @@
+1	Charlotte's Web	E.B. White	4.19
+2	The Secret Garden	Frances Hodgson Burnett	4.15
+3	"The Lion, the Witch and the Wardrobe (Chronicles of Narnia, #1)"	C.S. Lewis	4.23
+4	"Anne of Green Gables (Anne of Green Gables, #1)"	L.M. Montgomery	4.29
+5	Little Women	Louisa May Alcott	4.13
+6	Matilda	Roald Dahl	4.33
+7	"Charlie and the Chocolate Factory (Charlie Bucket, #1)"	Roald Dahl	4.15
+8	Where the Wild Things Are	Maurice Sendak	4.23
+9	"Little House in the Big Woods (Little House, #1)"	Laura Ingalls Wilder	4.19
+10	"A Wrinkle in Time (A Wrinkle in Time Quintet, #1)"	Madeleine L'Engle	3.99
+11	"Harry Potter and the Sorcerer's Stone (Harry Potter, #1)"	J.K. Rowling	4.47
+12	"The Hobbit (The Lord of the Rings, #0)"	J.R.R. Tolkien	4.28
+13	Where the Sidewalk Ends	Shel Silverstein	4.32
+14	Green Eggs and Ham	Dr. Seuss	4.3
+15	"Little House on the Prairie (Little House, #3)"	Laura Ingalls Wilder	4.21
+16	A Little Princess	Frances Hodgson Burnett	4.21
+17	"Pippi Longstocking (Pippi L?ngstrump, #1)"	Astrid Lindgren	4.14
+18	"Winnie-the-Pooh (Winnie-the-Pooh, #1)"	A.A. Milne	4.35
+19	Heidi	Johanna Spyri	4.01
+20	The Very Hungry Caterpillar	Eric Carle	4.31
+21	The Giving Tree	Shel Silverstein	4.37
+22	The Diary of a Young Girl	Anne Frank	4.18
+23	Island of the Blue Dolphins	Scott O'Dell	3.86
+24	Black Beauty	Anna Sewell	3.98
+25	"The Boxcar Children (The Boxcar Children, #1)"	Gertrude Chandler Warner	4.12
+26	James and the Giant Peach	Roald Dahl	4.02
+27	"The Cat in the Hat (The Cat in the Hat, #1)"	Dr. Seuss	4.18
+28	To Kill a Mockingbird	Harper Lee	4.27
+29	"Are You There God? It's Me, Margaret"	Judy Blume (Goodreads Author)	3.91
+30	The Velveteen Rabbit	Margery Williams Bianco	4.29
+31	Alice's Adventures in Wonderland / Through the Looking-Glass	Lewis Carroll	4.07
+32	The BFG	Roald Dahl	4.22
+33	Madeline	Ludwig Bemelmans	4.25
+34	"Amelia Bedelia (Amelia Bedelia, #1)"	Peggy Parish	4.18
+35	A Light in the Attic	Shel Silverstein	4.35
+36	The Witches	Roald Dahl	4.17
+37	The Little Prince	Antoine de Saint-Exup?ry	4.32
+38	Corduroy	Don Freeman	4.31
+39	"The Wonderful Wizard of Oz (Oz, #1)"	L. Frank Baum	3.99
+40	Where the Red Fern Grows	Wilson Rawls	4.1
+41	"Ramona Quimby, Age 8 (Ramona, #6)"	Beverly Cleary	4.1
+42	The Phantom Tollbooth	Norton Juster	4.19
+43	From the Mixed-Up Files of Mrs. Basil E. Frankweiler	E.L. Konigsburg	4.15
+44	The Tale of Peter Rabbit	Beatrix Potter	4.2
+45	"The Giver (The Giver, #1)"	Lois Lowry (Goodreads Author)	4.13
+46	Bridge to Terabithia	Katherine Paterson	4.03
+47	How the Grinch Stole Christmas!	Dr. Seuss	4.37
+48	"One Fish, Two Fish, Red Fish, Blue Fish"	Dr. Seuss (Reader)	4.16
+49	"The Chronicles of Narnia (Chronicles of Narnia, #1-7)"	C.S. Lewis	4.27
+50	Nancy Drew: Girl Detective: #1-4	Carolyn Keene	4.04
+51	The Adventures of Tom Sawyer	Mark Twain	3.92
+52	The Poky Little Puppy	Janette Sebring Lowrey	4.12
+53	"Sideways Stories from Wayside School (Wayside School, #1)"	Louis Sachar (Goodreads Author)	4.15
+54	The Complete Grimm's Fairy Tales	Jacob Grimm	4.28
+55	The Monster at the End of this Book	Jon Stone	4.45
+56	"Tales of a Fourth Grade Nothing (Fudge, #1)"	Judy Blume (Goodreads Author)	4.11
+57	The Wind in the Willows	Kenneth Grahame	4
+58	"Ramona the Pest (Ramona, #2)"	Beverly Cleary	4.07
+59	Harriet the Spy	Louise Fitzhugh	3.95
+60	Jane Eyre	Charlotte Bront?	4.14
+61	"The Little House Collection (Little House, #1-9)"	Laura Ingalls Wilder	4.35
+62	Peter Pan	J.M. Barrie	4.04
+63	"The Indian in the Cupboard (The Indian in the Cupboard, #1)"	Lynne Reid Banks	3.92
+64	"Mrs. Frisby and the Rats of NIMH (Rats of NIMH, #1)"	Robert C. O'Brien	4.16
+65	"Watership Down (Watership Down, #1)"	Richard Adams	4.07
+66	"Superfudge (Fudge, #3)"	Judy Blume (Goodreads Author)	4
+67	"Bunnicula (Bunnicula, #1)"	Deborah Howe	3.87
+68	The Complete Fairy Tales	Hans Christian Andersen	4.29
+69	"Ella Enchanted (Ella Enchanted, #1)"	Gail Carson Levine (Goodreads Author)	4
+70	"Beezus and Ramona (Ramona, #1)"	Beverly Cleary	4.02
+71	"Baby-Sitters Club Boxed Set #1 (The Baby-Sitters Club, #1-4)"	Ann M. Martin	3.89
+72	"The Black Stallion (The Black Stallion, #1)"	Walter Farley	4.19
+73	"Encyclopedia Brown, Boy Detective (Encyclopedia Brown, #1)"	Donald J. Sobol	4.05
+74	"Mrs. Piggle-Wiggle (Mrs. Piggle Wiggle, #1)"	Betty MacDonald	4.15
+75	"The Mouse and the Motorcycle (Ralph S. Mouse, #1)"	Beverly Cleary	3.95
+76	Treasure Island	Robert Louis Stevenson	3.84
+77	"The Borrowers (The Borrowers, #1)"	Mary Norton	4.03
+78	The Witch of Blackbird Pond	Elizabeth George Speare	4
+79	"Misty of Chincoteague (Misty, #1)"	Marguerite Henry	4.06
+80	The Lorax	Dr. Seuss	4.34
+81	"Harry Potter and the Chamber of Secrets (Harry Potter, #2)"	J.K. Rowling	4.43
+82	Tuck Everlasting	Natalie Babbitt	3.89
+83	"Mary Poppins (Mary Poppins, #1)"	P.L. Travers	4.02
+84	Stuart Little	E.B. White	3.9
+85	Goodnight Moon	Margaret Wise Brown	4.3
+86	"The Long Winter (Little House, #6)"	Laura Ingalls Wilder	4.15
+87	"Harry Potter and the Prisoner of Azkaban (Harry Potter, #3)"	J.K. Rowling	4.58
+88	Make Way for Ducklings	Robert McCloskey	4.23
+89	"My Side of the Mountain (Mountain, #1)"	Jean Craighead George	4.08
+90	Rikki-Tikki-Tavi	"Jerry Pinkney (Adapted by, Illustrator)"	3.9
+91	The Little Engine That Could	Watty Piper	4.18
+92	Aesop's Fables	Aesop	4.05
+93	"Prince Caspian (Chronicles of Narnia, #2)"	C.S. Lewis	3.98
+94	The Adventures of Huckleberry Finn	Mark Twain	3.83
+95	The Westing Game	Ellen Raskin	4.01
+96	How to Eat Fried Worms	Thomas Rockwell	3.76
+97	"Cloudy With a Chance of Meatballs (Cloudy with a Chance of Meatballs, #1)"	Judi Barrett	4.17
+98	"Alexander and the Terrible, Horrible, No Good, Very Bad Day"	Judith Viorst	4.23
+99	The Trumpet of the Swan	E.B. White	4.09
+100	Mr. Popper's Penguins	Richard Atwater	3.97
