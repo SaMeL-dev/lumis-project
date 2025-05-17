@@ -1,12 +1,16 @@
 // LUMIS server.c
 #define _CRT_SECURE_NO_WARNINGS
+#define USERS_FILE "src/users.txt"
+#define BOOKLIST_FILE "src/booklist2-2.txt"
 #include <stdio.h>
 #include <winsock2.h>
 #include <process.h>
+#include <string.h>
 
 #define PORT 12345
 #define BUF_SIZE 1024
 
+void SendMenu(SOCKET clientSock);
 void HandleClient(void* arg);
 
 int main() {
@@ -40,45 +44,54 @@ int main() {
     return 0;
 }
 
+// 메뉴 창 불러오기 함수
+void SendMenu(SOCKET clientSock) {
+    const char* menu = 
+        "===== 메뉴 =====\n"
+        "1. 도서 검색\n"
+        "2. 도서 추가\n"
+        "3. 도서 삭제\n"
+        "4. 도서 랭킹\n"
+        "5. 도서 정보 수정\n"
+        "6. 도서 목록 개수\n"
+        "7. 수동 저장\n"
+        "8. 종료\n"
+        "선택: ";
+
+    send(clientSock, menu, strlen(menu), 0);
+}
+
 // 클라이언트 요청 처리 스레드 함수
 void HandleClient(void* arg) {
     SOCKET clientSock = (SOCKET)arg;
     char buf[BUF_SIZE];
     int str_len;
-
-    // 로그인 처리
-    recv(clientSock, buf, BUF_SIZE - 1, 0);
-    buf[strcspn(buf, "\n")] = 0;  // 개행 문자 제거
-
-    // ID와 PW 파싱
-    char* input_id = strtok(buf, "//");
-    char* input_pw = strtok(NULL, "//");
-
-    // 파일 열고 인증
-    FILE* fp = fopen("users.txt", "r");
-    char line[BUF_SIZE];
     int login_success = 0;
 
-    if (fp != NULL) {
-        while (fgets(line, sizeof(line), fp)) {
-            line[strcspn(line, "\n")] = 0;  // 개행 제거
-            char* file_id = strtok(line, "//");
-            char* file_pw = strtok(NULL, "//");
-            
-            if (file_id && file_pw && strcmp(file_id, input_id) == 0 && strcmp(file_pw, input_pw) == 0) {
-                login_success = 1;
-                break;
-            }
-        }
-        fclose(fp);
-    }
+    while (!login_success) {
+        recv(clientSock, buf, BUF_SIZE - 1, 0);
+        buf[strcspn(buf, "\n")] = 0;  // 개행 제거
 
-    if (login_success) {
-        send(clientSock, "LOGIN_SUCCESS\n", 14, 0);
-    } else {
-        send(clientSock, "LOGIN_FAIL\n", 11, 0);
-        closesocket(clientSock);
-        return;  // 로그인 실패 시 종료
+        FILE* fp = fopen(USERS_FILE, "r");
+        char line[BUF_SIZE];
+
+        if (fp != NULL) {
+            while (fgets(line, sizeof(line), fp)) {
+                line[strcspn(line, "\n")] = 0;  // 개행 제거
+
+                if (strcmp(line, buf) == 0) {
+                    login_success = 1;
+                    break;
+                }
+            }
+            fclose(fp);
+        }
+
+        if (login_success) {
+            send(clientSock, "LOGIN_SUCCESS\n", strlen("LOGIN_SUCCESS\n"), 0);
+        } else {
+            send(clientSock, "LOGIN_FAIL\n", strlen("LOGIN_FAIL\n"), 0);
+        }
     }
 
     while ((str_len = recv(clientSock, buf, BUF_SIZE -1, 0)) != 0) {
@@ -88,11 +101,12 @@ void HandleClient(void* arg) {
         buf[strcspn(buf, "\n")] = 0; // 개행 제거
 
         char* command = strtok(buf, "\t");
+        SendMenu(clientSock);
 
         // 1번 도서 검색 기능
         if (strcmp(command, "SEARCH") == 0) {
             char* keyword = strtok(NULL, "\t");
-            FILE* fp = fopen("booklist2-2.txt", "r");
+            FILE* fp = fopen(BOOKLIST_FILE, "r");
             char line[BUF_SIZE];
             char result[BUF_SIZE * 5] = "";  // 결과 누적 버퍼
 
@@ -110,6 +124,8 @@ void HandleClient(void* arg) {
             }
 
             send(clientSock, result, strlen(result), 0);
+
+            SendMenu(clientSock);
         }
 
         // 2번 도서 추가 기능
@@ -118,22 +134,42 @@ void HandleClient(void* arg) {
             char* author = strtok(NULL, "\t");
             char* rating = strtok(NULL, "\t");
 
-            FILE* fp = fopen("booklist2-2.txt", "a"); // append 모드
-            if (fp != NULL && title && author && rating) {
-                fprintf(fp, "%s\t%s\t%s\n", title, author, rating);
-                fclose(fp);
-                send(clientSock, "도서 추가 성공\n", 15, 0);
+            if (title && author && rating) {
+                // 책 개수 파악
+                FILE* fp_count = fopen(BOOKLIST_FILE, "r");
+                int count = 0;
+                char line[BUF_SIZE];
+                if (fp_count != NULL) {
+                    while (fgets(line, sizeof(line), fp_count)) {
+                        count++;
+                    }
+                    fclose(fp_count);
+                }
+
+                int new_id = count + 1;  // 다음 순번
+
+                // 파일에 추가
+                FILE* fp = fopen(BOOKLIST_FILE, "a");
+                if (fp != NULL) {
+                    fprintf(fp, "%d\t%s\t%s\t%s\n", new_id, title, author, rating);
+                    fclose(fp);
+                    send(clientSock, "도서 추가 성공\n", 17, 0);
+                } else {
+                    send(clientSock, "파일 열기 실패\n", 16, 0);
+                }
             } else {
-                send(clientSock, "도서 추가 실패\n", 15, 0);
+                send(clientSock, "입력값 부족\n", 13, 0);
             }
+
+            SendMenu(clientSock);  // 메뉴 재출력
         }
 
         // 3번 도서 삭제 기능
         else if (strcmp(command, "DELETE") == 0) {
             char* title = strtok(NULL, "\t");
 
-            FILE* fp = fopen("booklist2-2.txt", "r");
-            FILE* temp_fp = fopen("temp.txt", "w");
+            FILE* fp = fopen(BOOKLIST_FILE, "r");
+            FILE* temp_fp = fopen("src/temp.txt", "w");
             char line[BUF_SIZE];
             int found = 0;
 
@@ -148,22 +184,25 @@ void HandleClient(void* arg) {
                 fclose(fp);
                 fclose(temp_fp);
 
-                remove("booklist2-2.txt");
-                rename("temp.txt", "booklist2-2.txt");
+                remove(BOOKLIST_FILE);
+                rename("src/temp.txt", BOOKLIST_FILE);
 
                 if (found) {
                     send(clientSock, "도서 삭제 성공\n", 15, 0);
+                    SendMenu(clientSock);
                 } else {
                     send(clientSock, "도서 삭제 실패. 해당 도서가 존재하는지 확인하세요.\n", 27, 0);
+                    SendMenu(clientSock);
                 }
             } else {
                 send(clientSock, "파일 열기 실패\n", 16, 0);
+                SendMenu(clientSock);
             }
         }
 
         // 4번 도서 랭킹 기능
         else if (strcmp(command, "RANKING") == 0) {
-            FILE* fp = fopen("booklist2-2.txt", "r");
+            FILE* fp = fopen(BOOKLIST_FILE, "r");
             char lines[700][BUF_SIZE];
             float ratings[700];
             int count = 0;
@@ -216,8 +255,10 @@ void HandleClient(void* arg) {
                 }
 
                 send(clientSock, result, strlen(result), 0);
+                SendMenu(clientSock);
             } else {
                 send(clientSock, "파일 열기 실패\n", 16, 0);
+                SendMenu(clientSock);
             }
         }
 
@@ -228,8 +269,8 @@ void HandleClient(void* arg) {
             char* new_author = strtok(NULL, "\t");
             char* new_rating = strtok(NULL, "\t");
 
-            FILE* fp = fopen("booklist2-2.txt", "r");
-            FILE* temp_fp = fopen("temp.txt", "w");
+            FILE* fp = fopen(BOOKLIST_FILE, "r");
+            FILE* temp_fp = fopen("src/temp.txt", "w");
             char line[BUF_SIZE];
             int found = 0;
 
@@ -251,22 +292,25 @@ void HandleClient(void* arg) {
                 fclose(fp);
                 fclose(temp_fp);
 
-                remove("booklist2-2.txt");
-                rename("temp.txt", "booklist2-2.txt");
+                remove(BOOKLIST_FILE);
+                rename("src/temp.txt", BOOKLIST_FILE);
 
                 if (found) {
                     send(clientSock, "도서 정보 수정 성공\n", 23, 0);
+                    SendMenu(clientSock);
                 } else {
                     send(clientSock, "도서 정보 수정 실패. 해당 도서가 존재하는지 확인하세요.\n", 36, 0);
+                    SendMenu(clientSock);
                 }
             } else {
                 send(clientSock, "파일 열기 실패\n", 16, 0);
+                SendMenu(clientSock);
             }
         }
 
         // 6번 도서 목록 개수 출력 기능
         else if (strcmp(command, "COUNT") == 0) {
-            FILE* fp = fopen("booklist2-2.txt", "r");
+            FILE* fp = fopen(BOOKLIST_FILE, "r");
             char line[BUF_SIZE];
             int count = 0;
 
@@ -279,8 +323,10 @@ void HandleClient(void* arg) {
                 char result[10];
                 sprintf(result, "%d", count);  // 개수 문자열로 변환
                 send(clientSock, result, strlen(result), 0);
+                SendMenu(clientSock);
             } else {
                 send(clientSock, "파일 열기 실패\n", 16, 0);
+                SendMenu(clientSock);
             }
         }
 
@@ -288,6 +334,7 @@ void HandleClient(void* arg) {
         else if (strcmp(command, "SAVE") == 0) {
             // 현재 모든 변경이 즉시 저장되고 있으므로, 별도 동작 없이 메시지 출력
             send(clientSock, "현재 상태가 파일에 저장되었습니다.\n", 36, 0);
+            SendMenu(clientSock);
         }
 
         // 8번 종료 기능
@@ -299,6 +346,9 @@ void HandleClient(void* arg) {
         // 유효하지 않은 입력값 예외 처리
         else {
             send(clientSock, "유효하지 않은 명령입니다.\n", 30, 0);
+            SendMenu(clientSock);
         }
     }
+    closesocket(clientSock);
+    _endthread();
 }

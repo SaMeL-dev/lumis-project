@@ -2,21 +2,23 @@
 /* 과제 요구사항 상 스레드 동기화 및 핸들 제어가 불필요하여, MinGW 컴파일 환경에서
    사용할 수 있는 _beginthread 사용이 호환성 및 리소스 관리 측면에서 적합하다고 판단했습니다. */
 #define _CRT_SECURE_NO_WARNINGS
+#define USERS_FILE "src/users.txt"
+#define BOOKLIST_FILE "src/booklist2-2.txt"
 #include <stdio.h>
 #include <winsock2.h>
 #include <process.h>
+#include <string.h>
 
 #define SERVER_IP "127.0.0.1"
 #define PORT 12345
 #define BUF_SIZE 1024
-
-void RecvMsg(void* arg);
 
 int main() {
     WSADATA wsaData;
     SOCKET sock;
     SOCKADDR_IN serv_adr;
     char msg[BUF_SIZE];
+    int recv_len;
 
     WSAStartup(MAKEWORD(2, 2), &wsaData);
 
@@ -33,46 +35,37 @@ int main() {
     puts("서버에 연결되었습니다. 8 입력 시 종료");
     // 로그인 정보 입력
     char id[50], pw[50];
-    printf("ID 입력: ");
-    fgets(id, sizeof(id), stdin);
-    id[strcspn(id, "\n")] = 0;
-
-    printf("PW 입력: ");
-    fgets(pw, sizeof(pw), stdin);
-    pw[strcspn(pw, "\n")] = 0;
-
-    // 로그인 메시지 전송: ID//PW\n 형태
-    sprintf(msg, "%s//%s\n", id, pw);
-    send(sock, msg, strlen(msg), 0);
-
-    // 로그인 응답 수신
-    int recv_len = recv(sock, msg, BUF_SIZE - 1, 0);
-    msg[recv_len] = 0;
-
-    if (strcmp(msg, "LOGIN_SUCCESS\n") == 0) {
-        printf("로그인 성공!\n");
-    } else {
-        printf("로그인 실패. 종료합니다.\n");
-        closesocket(sock);
-        WSACleanup();
-        return 0;
-    }
-
-    _beginthread(RecvMsg, 0, (void*)sock);
 
     while (1) {
-        // 메뉴 선택
-        printf("\n===== 메뉴 =====\n");
-        printf("1. 도서 검색 (SEARCH)\n");
-        printf("2. 도서 추가 (ADD)\n");
-        printf("3. 도서 삭제 (DELETE)\n");
-        printf("4. 도서 랭킹 (RANKING)\n");
-        printf("5. 도서 정보 수정 (MODIFY)\n");
-        printf("6. 도서 목록 개수 출력 (COUNT)\n");
-        printf("7. 수동 저장 (SAVE)\n");
-        printf("8. 종료 (quit)\n");
-        printf("선택: ");
+        // ID 입력
+        printf("ID 입력: ");
+        fgets(id, sizeof(id), stdin);
+        id[strcspn(id, "\n")] = 0;  // 개행 문자 제거
 
+        // PW 입력
+        printf("PW 입력: ");
+        fgets(pw, sizeof(pw), stdin);
+        pw[strcspn(pw, "\n")] = 0;  // 개행 문자 제거
+
+        // 로그인 요청 메시지 전송: "ID//PW" 형식
+        sprintf(msg, "%s//%s", id, pw);
+        send(sock, msg, strlen(msg), 0);
+
+        // 로그인 응답 수신
+        recv_len = recv(sock, msg, BUF_SIZE - 1, 0);
+        msg[recv_len] = 0;  // 문자열 종료 처리
+
+        if (strcmp(msg, "LOGIN_SUCCESS\n") == 0) {
+            printf("로그인 성공!\n");
+            break;  // 로그인 성공 → 메뉴로 이동
+        } else {
+            // 로그인 실패 시 다시 입력
+            printf("로그인 실패. 다시 시도하세요.\n\n");
+        }
+    }
+
+    while (1) {
+        // 메뉴 번호 입력받기
         fgets(msg, 4, stdin);
 
         // 1번 도서 검색 기능
@@ -224,22 +217,4 @@ int main() {
     closesocket(sock);
     WSACleanup();
     return 0;
-}
-
-void RecvMsg(void* arg) {
-    SOCKET sock = (SOCKET)arg;
-    char msg[BUF_SIZE];
-    int str_len;
-
-    while ((str_len = recv(sock, msg, BUF_SIZE - 1, 0)) > 0) {
-        msg[str_len] = 0;
-        fputs(msg, stdout);
-    }
-
-    // 예외 처리: recv()가 0 이하로 리턴됐을 때
-    if (str_len == 0) {
-        printf("서버 연결이 종료되었습니다.\n");
-    } else if (str_len == SOCKET_ERROR) {
-        printf("데이터 수신 중 오류가 발생했습니다. 입력 내용을 다시 한 번 확인해주세요.\n");
-    }
 }
