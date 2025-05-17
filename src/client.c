@@ -1,6 +1,6 @@
 // LUMIS client.c
-// NOTE: 과제 요구사항 상 스레드 동기화 및 핸들 제어가 불필요하여, MinGW 컴파일 환경에서
-//       사용할 수 있는 _beginthread 사용이 호환성 및 리소스 관리 측면에서 적합하다고 판단했습니다.
+/* 과제 요구사항 상 스레드 동기화 및 핸들 제어가 불필요하여, MinGW 컴파일 환경에서
+   사용할 수 있는 _beginthread 사용이 호환성 및 리소스 관리 측면에서 적합하다고 판단했습니다. */
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <winsock2.h>

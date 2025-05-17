@@ -7,7 +7,7 @@
 #define PORT 12345
 #define BUF_SIZE 1024
 
-unsigned __stdcall HandleClient(void* arg);
+void HandleClient(void* arg);
 
 int main() {
     WSADATA wsaData;
@@ -33,16 +33,15 @@ int main() {
         // 클라이언트 접속 안내 및 IP 출력
         printf("클라이언트 접속됨, IP: %s\n", inet_ntoa(clnt_adr.sin_addr));
 
-        _beginthreadex(NULL, 0, HandleClient, (void*)clientSock, 0, NULL);
+        _beginthread(HandleClient, 0, (void*)clientSock);
     }
-
     closesocket(serv_sock);
     WSACleanup();
     return 0;
 }
 
 // 클라이언트 요청 처리 스레드 함수
-unsigned __stdcall HandleClient(void* arg) {
+void HandleClient(void* arg) {
     SOCKET clientSock = (SOCKET)arg;
     char buf[BUF_SIZE];
     int str_len;
