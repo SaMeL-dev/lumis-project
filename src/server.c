@@ -46,6 +46,41 @@ void HandleClient(void* arg) {
     char buf[BUF_SIZE];
     int str_len;
 
+    // 로그인 처리
+    recv(clientSock, buf, BUF_SIZE - 1, 0);
+    buf[strcspn(buf, "\n")] = 0;  // 개행 문자 제거
+
+    // ID와 PW 파싱
+    char* input_id = strtok(buf, "//");
+    char* input_pw = strtok(NULL, "//");
+
+    // 파일 열고 인증
+    FILE* fp = fopen("users.txt", "r");
+    char line[BUF_SIZE];
+    int login_success = 0;
+
+    if (fp != NULL) {
+        while (fgets(line, sizeof(line), fp)) {
+            line[strcspn(line, "\n")] = 0;  // 개행 제거
+            char* file_id = strtok(line, "//");
+            char* file_pw = strtok(NULL, "//");
+            
+            if (file_id && file_pw && strcmp(file_id, input_id) == 0 && strcmp(file_pw, input_pw) == 0) {
+                login_success = 1;
+                break;
+            }
+        }
+        fclose(fp);
+    }
+
+    if (login_success) {
+        send(clientSock, "LOGIN_SUCCESS\n", 14, 0);
+    } else {
+        send(clientSock, "LOGIN_FAIL\n", 11, 0);
+        closesocket(clientSock);
+        return;  // 로그인 실패 시 종료
+    }
+
     while ((str_len = recv(clientSock, buf, BUF_SIZE -1, 0)) != 0) {
         buf[str_len] = '\0';
         printf("[수신] %s\n", buf);
@@ -260,42 +295,10 @@ void HandleClient(void* arg) {
             send(clientSock, "LOGOUT_SUCCESS\n", 16, 0);
             break;  // 클라이언트와의 연결 종료
         }
-    }
 
-    // 로그인 처리
-    recv(clientSock, buf, BUF_SIZE - 1, 0);
-    buf[strcspn(buf, "\n")] = 0;  // 개행 문자 제거
-
-    // ID와 PW 파싱
-    char* input_id = strtok(buf, "//");
-    char* input_pw = strtok(NULL, "//");
-
-    // 파일 열고 인증
-    FILE* fp = fopen("users.txt", "r");
-    char line[BUF_SIZE];
-    int login_success = 0;
-
-    if (fp != NULL) {
-        while (fgets(line, sizeof(line), fp)) {
-            line[strcspn(line, "\n")] = 0;  // 개행 제거
-            char* file_id = strtok(line, "//");
-            char* file_pw = strtok(NULL, "//");
-            
-            if (file_id && file_pw && strcmp(file_id, input_id) == 0 && strcmp(file_pw, input_pw) == 0) {
-                login_success = 1;
-                break;
-            }
+        // 유효하지 않은 입력값 예외 처리
+        else {
+            send(clientSock, "유효하지 않은 명령입니다.\n", 30, 0);
         }
-        fclose(fp);
     }
-
-    if (login_success) {
-        send(clientSock, "LOGIN_SUCCESS\n", 14, 0);
-    } else {
-        send(clientSock, "LOGIN_FAIL\n", 11, 0);
-    }
-
-    closesocket(clientSock);
-    printf("클라이언트 연결 종료\n");
-    return 0;   // unsigned 정의로 인해 꼭 리턴값 필요
 }
