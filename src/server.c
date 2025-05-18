@@ -10,8 +10,8 @@
 #define PORT 12345
 #define BUF_SIZE 1024
 
-void SendMenu(SOCKET clientSock);
 void HandleClient(void* arg);
+void ReorderBooks();
 
 int main() {
     WSADATA wsaData;
@@ -44,21 +44,36 @@ int main() {
     return 0;
 }
 
-// 메뉴 창 불러오기 함수
-void SendMenu(SOCKET clientSock) {
-    const char* menu = 
-        "===== 메뉴 =====\n"
-        "1. 도서 검색\n"
-        "2. 도서 추가\n"
-        "3. 도서 삭제\n"
-        "4. 도서 랭킹\n"
-        "5. 도서 정보 수정\n"
-        "6. 도서 목록 개수\n"
-        "7. 수동 저장\n"
-        "8. 종료\n"
-        "선택: ";
+// 도서 목록을 불러와 순번 재조정하는 함수
+void ReorderBooks() {
+    FILE* fp = fopen(BOOKLIST_FILE, "r");
+    char lines[700][BUF_SIZE];
+    int count = 0;
 
-    send(clientSock, menu, strlen(menu), 0);
+    if (fp != NULL) {
+        while (fgets(lines[count], sizeof(lines[count]), fp)) {
+            char temp[BUF_SIZE];
+            strcpy(temp, lines[count]);
+
+            strtok(temp, "\t"); // 기존 번호 제거
+            char* title = strtok(NULL, "\t");
+            char* author = strtok(NULL, "\t");
+            char* rating = strtok(NULL, "\n");
+
+            if (title != NULL && author != NULL && rating != NULL) {
+                sprintf(lines[count], "%d\t%s\t%s\t%s\n", count + 1, title, author, rating);
+                count++;
+            }
+        }
+        fclose(fp);
+
+        // 새로 번호가 정렬된 리스트를 파일에 다시 저장
+        fp = fopen(BOOKLIST_FILE, "w");
+        for (int i = 0; i < count; i++) {
+            fputs(lines[i], fp);
+        }
+        fclose(fp);
+    }
 }
 
 // 클라이언트 요청 처리 스레드 함수
@@ -101,7 +116,6 @@ void HandleClient(void* arg) {
         buf[strcspn(buf, "\n")] = 0; // 개행 제거
 
         char* command = strtok(buf, "\t");
-        SendMenu(clientSock);
 
         // 1번 도서 검색 기능
         if (strcmp(command, "SEARCH") == 0) {
@@ -124,8 +138,6 @@ void HandleClient(void* arg) {
             }
 
             send(clientSock, result, strlen(result), 0);
-
-            SendMenu(clientSock);
         }
 
         // 2번 도서 추가 기능
@@ -153,15 +165,13 @@ void HandleClient(void* arg) {
                 if (fp != NULL) {
                     fprintf(fp, "%d\t%s\t%s\t%s\n", new_id, title, author, rating);
                     fclose(fp);
-                    send(clientSock, "도서 추가 성공\n", 17, 0);
+                    send(clientSock, "도서 추가 성공\n", 22, 0);
                 } else {
-                    send(clientSock, "파일 열기 실패\n", 16, 0);
+                    send(clientSock, "파일 열기 실패\n", 22, 0);
                 }
             } else {
-                send(clientSock, "입력값 부족\n", 13, 0);
+                send(clientSock, "입력값 부족\n", 18, 0);
             }
-
-            SendMenu(clientSock);  // 메뉴 재출력
         }
 
         // 3번 도서 삭제 기능
@@ -187,35 +197,41 @@ void HandleClient(void* arg) {
                 remove(BOOKLIST_FILE);
                 rename("src/temp.txt", BOOKLIST_FILE);
 
+                // 번호 재정렬 함수 호출
+                ReorderBooks();
+
                 if (found) {
-                    send(clientSock, "도서 삭제 성공\n", 15, 0);
-                    SendMenu(clientSock);
+                    send(clientSock, "도서 삭제 완료\n", strlen("도서 삭제 완료\n"), 0);
                 } else {
-                    send(clientSock, "도서 삭제 실패. 해당 도서가 존재하는지 확인하세요.\n", 27, 0);
-                    SendMenu(clientSock);
+                    send(clientSock, "도서 삭제 실패. 해당 도서가 존재하는지 확인하세요.\n", strlen("도서 삭제 실패. 해당 도서가 존재하는지 확인하세요.\n"), 0);
                 }
             } else {
-                send(clientSock, "파일 열기 실패\n", 16, 0);
-                SendMenu(clientSock);
+                send(clientSock, "파일 열기 실패\n", strlen("파일 열기 실패\n"), 0);
             }
+            // 응답의 끝을 알리는 구분자 전송
+            send(clientSock, "##END##\n", strlen("##END##\n"), 0);
         }
 
         // 4번 도서 랭킹 기능
         else if (strcmp(command, "RANKING") == 0) {
             FILE* fp = fopen(BOOKLIST_FILE, "r");
-            char lines[700][BUF_SIZE];
-            float ratings[700];
-            int count = 0;
+            if (fp == NULL) {
+                send(clientSock, "파일 열기 실패\n", strlen("파일 열기 실패\n"), 0);
+            } else {
+                char lines[700][BUF_SIZE];
+                float ratings[700];
+                int count = 0;
 
-            if (fp != NULL) {
-                while (fgets(lines[count], sizeof(lines[count]), fp)) {
+                // 파일에서 각 줄 불러오기
+                while (count < 700 && fgets(lines[count], BUF_SIZE, fp) != NULL) {
                     char temp[BUF_SIZE];
                     strcpy(temp, lines[count]);
 
-                    strtok(temp, "\t");
-                    strtok(NULL, "\t");
-                    char* rating_str = strtok(NULL, "\n"); // 평점 추출
-
+                    // 파일 형식: 번호\t도서명\t저자명\t평점\n
+                    strtok(temp, "\t");                   // 번호 토큰
+                    strtok(NULL, "\t");                   // 도서명 토큰
+                    strtok(NULL, "\t");                   // 저자명 토큰
+                    char* rating_str = strtok(NULL, "\n");  // 평점 토큰 (네 번째)
                     if (rating_str != NULL) {
                         ratings[count] = atof(rating_str);
                         count++;
@@ -223,51 +239,45 @@ void HandleClient(void* arg) {
                 }
                 fclose(fp);
 
-                // 선택 정렬로 평점 내림차순 정렬
+                // 내림차순 정렬 (선택 정렬)
                 for (int i = 0; i < count - 1; i++) {
-                    int max_idx = i;
                     for (int j = i + 1; j < count; j++) {
-                        if (ratings[j] > ratings[max_idx]) {
-                            max_idx = j;
+                        if (ratings[j] > ratings[i]) {
+                            // 평점 스왑
+                            float tmp_rating = ratings[i];
+                            ratings[i] = ratings[j];
+                            ratings[j] = tmp_rating;
+                            
+                            // 해당 줄의 스왑
+                            char tmp_line[BUF_SIZE];
+                            strcpy(tmp_line, lines[i]);
+                            strcpy(lines[i], lines[j]);
+                            strcpy(lines[j], tmp_line);
                         }
-                    }
-                    if (max_idx != i) {
-                        // Swap 평점
-                        float temp_rating = ratings[i];
-                        ratings[i] = ratings[max_idx];
-                        ratings[max_idx] = temp_rating;
-
-                        // Swap 도서 정보
-                        char temp_line[BUF_SIZE];
-                        strcpy(temp_line, lines[i]);
-                        strcpy(lines[i], lines[max_idx]);
-                        strcpy(lines[max_idx], temp_line);
                     }
                 }
 
+                // 결과 문자열 누적
                 char result[BUF_SIZE * 5] = "";
                 for (int i = 0; i < count; i++) {
                     strcat(result, lines[i]);
                 }
-
                 if (count == 0) {
                     strcpy(result, "등록된 도서가 없습니다.\n");
                 }
-
+                // 정렬 결과 전송
                 send(clientSock, result, strlen(result), 0);
-                SendMenu(clientSock);
-            } else {
-                send(clientSock, "파일 열기 실패\n", 16, 0);
-                SendMenu(clientSock);
+                // 응답의 끝을 알리는 구분자 전송
+                send(clientSock, "##END##\n", strlen("##END##\n"), 0);
             }
         }
 
         // 5번 도서 정보 수정 기능
         else if (strcmp(command, "MODIFY") == 0) {
-            char* old_title = strtok(NULL, "\t");
-            char* new_title = strtok(NULL, "\t");
-            char* new_author = strtok(NULL, "\t");
-            char* new_rating = strtok(NULL, "\t");
+            char* old_title = strtok(NULL, "\t");       // 수정할 기존 도서명
+            char* new_title = strtok(NULL, "\t");       // 새 도서명
+            char* new_author = strtok(NULL, "\t");      // 새 저자명
+            char* new_rating = strtok(NULL, "\n");      // 새 평점
 
             FILE* fp = fopen(BOOKLIST_FILE, "r");
             FILE* temp_fp = fopen("src/temp.txt", "w");
@@ -279,32 +289,36 @@ void HandleClient(void* arg) {
                     char temp_line[BUF_SIZE];
                     strcpy(temp_line, line);
 
-                    char* title = strtok(temp_line, "\t");
+                    // 원래 저장된 형식: 번호\t도서명\t저자명\t평점\n
+                    // 번호 토큰 추출
+                    char* record_num = strtok(temp_line, "\t");
+                    // 실제 도서명은 두 번째 토큰
+                    char* curr_title = strtok(NULL, "\t");
 
-                    if (title && strcmp(title, old_title) == 0) {
-                        // 도서 정보 수정
-                        fprintf(temp_fp, "%s\t%s\t%s\n", new_title, new_author, new_rating);
+                    // 기존 도서명이 일치하면 새 정보로 수정
+                    if (curr_title != NULL && strcmp(curr_title, old_title) == 0) {
+                        // 기존 번호(record_num)는 그대로 유지하면서 새 도서명, 새 저자명, 새 평점을 저장
+                        fprintf(temp_fp, "%s\t%s\t%s\t%s\n", record_num, new_title, new_author, new_rating);
                         found = 1;
                     } else {
-                        fputs(line, temp_fp);  // 기존 정보 그대로 복사
+                        // 그 외의 경우는 원래 줄을 그대로 복사
+                        fputs(line, temp_fp);
                     }
                 }
                 fclose(fp);
                 fclose(temp_fp);
 
+                // 기존 파일 삭제 후 임시 파일 이름 변경
                 remove(BOOKLIST_FILE);
                 rename("src/temp.txt", BOOKLIST_FILE);
 
                 if (found) {
-                    send(clientSock, "도서 정보 수정 성공\n", 23, 0);
-                    SendMenu(clientSock);
+                    send(clientSock, "도서 정보 수정 성공\n", 29, 0);
                 } else {
-                    send(clientSock, "도서 정보 수정 실패. 해당 도서가 존재하는지 확인하세요.\n", 36, 0);
-                    SendMenu(clientSock);
+                    send(clientSock, "도서 정보 수정 실패. 해당 도서가 존재하는지 확인하세요.\n", 80, 0);
                 }
             } else {
-                send(clientSock, "파일 열기 실패\n", 16, 0);
-                SendMenu(clientSock);
+                send(clientSock, "파일 열기 실패\n", 22, 0);
             }
         }
 
@@ -323,18 +337,15 @@ void HandleClient(void* arg) {
                 char result[10];
                 sprintf(result, "%d", count);  // 개수 문자열로 변환
                 send(clientSock, result, strlen(result), 0);
-                SendMenu(clientSock);
             } else {
                 send(clientSock, "파일 열기 실패\n", 16, 0);
-                SendMenu(clientSock);
             }
         }
 
         // 7번 수동 저장 기능
         else if (strcmp(command, "SAVE") == 0) {
             // 현재 모든 변경이 즉시 저장되고 있으므로, 별도 동작 없이 메시지 출력
-            send(clientSock, "현재 상태가 파일에 저장되었습니다.\n", 36, 0);
-            SendMenu(clientSock);
+            send(clientSock, "현재 상태가 파일에 저장되었습니다.\n", 51, 0);
         }
 
         // 8번 종료 기능
@@ -346,7 +357,6 @@ void HandleClient(void* arg) {
         // 유효하지 않은 입력값 예외 처리
         else {
             send(clientSock, "유효하지 않은 명령입니다.\n", 30, 0);
-            SendMenu(clientSock);
         }
     }
     closesocket(clientSock);

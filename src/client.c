@@ -13,6 +13,20 @@
 #define PORT 12345
 #define BUF_SIZE 1024
 
+// 메뉴항목 출력 함수
+void PrintMenu() {
+    printf("\n===== 메뉴 =====\n");
+    printf("1. 도서 검색\n");
+    printf("2. 도서 추가\n");
+    printf("3. 도서 삭제\n");
+    printf("4. 도서 랭킹\n");
+    printf("5. 도서 정보 수정\n");
+    printf("6. 도서 목록 개수\n");
+    printf("7. 수동 저장\n");
+    printf("8. 종료\n");
+    printf("선택: ");
+}
+
 int main() {
     WSADATA wsaData;
     SOCKET sock;
@@ -65,6 +79,8 @@ int main() {
     }
 
     while (1) {
+        // 메뉴항목 출력 함수 호출
+        PrintMenu();
         // 메뉴 번호 입력받기
         fgets(msg, 4, stdin);
 
@@ -83,7 +99,7 @@ int main() {
             // 서버 응답 수신
             int recv_len = recv(sock, msg, BUF_SIZE - 1, 0);
             msg[recv_len] = 0;
-            printf("검색 결과:\n%s\n", msg);
+            printf("검색 결과:%s\n", msg);
         }
 
         // 2번 도서 추가 기능
@@ -115,7 +131,6 @@ int main() {
 
         // 3번 도서 삭제 기능
         else if (strcmp(msg, "3\n") == 0) {
-            // 도서 삭제
             char title[100];
             printf("삭제할 도서명 입력: ");
             fgets(title, sizeof(title), stdin);
@@ -125,21 +140,62 @@ int main() {
             sprintf(send_buf, "DELETE\t%s\n", title);
             send(sock, send_buf, strlen(send_buf), 0);
 
-            // 서버 응답 수신
-            int recv_len = recv(sock, msg, BUF_SIZE - 1, 0);
-            msg[recv_len] = 0;
-            printf("서버 응답: %s\n", msg);
+            // 서버 응답 수신 (구분자 "##END##\n"가 나타날 때까지)
+            char recv_buf[BUF_SIZE * 2] = {0};  // 응답을 모을 버퍼
+            int total_received = 0;
+            while (1) {
+                int recv_len = recv(sock, recv_buf + total_received, BUF_SIZE - 1, 0);
+                if (recv_len <= 0) break;
+                total_received += recv_len;
+                recv_buf[total_received] = '\0';
+                if (strstr(recv_buf, "##END##\n") != NULL) {  // 구분자 체크
+                    break;
+                }
+            }
+
+            // 구분자 이후의 내용을 제거
+            char* delimiter = strstr(recv_buf, "##END##\n");
+            if(delimiter) {
+                *delimiter = '\0';
+            }
+            printf("서버 응답:%s\n", recv_buf);
         }
 
         // 4번 도서 랭킹 기능
         else if (strcmp(msg, "4\n") == 0) {     
-            // 도서 랭킹 요청
+            // 도서 랭킹 요청 전송
             send(sock, "RANKING\n", strlen("RANKING\n"), 0);
 
-            // 서버 응답 수신
-            int recv_len = recv(sock, msg, BUF_SIZE - 1, 0);
-            msg[recv_len] = 0;
-            printf("도서 랭킹:\n%s\n", msg);
+            // 서버 응답 수신: "##END##\n" 구분자까지 읽어들임
+            char totalResponse[BUF_SIZE * 10] = "";  // 충분히 큰 버퍼 (상황에 맞게 조정)
+            char buffer[BUF_SIZE] = {0};
+            int bytes;
+            
+            while (1) {
+                bytes = recv(sock, buffer, BUF_SIZE - 1, 0);
+                if (bytes == SOCKET_ERROR) {
+                    printf("서버 응답 수신 오류\n");
+                    break;
+                }
+                if (bytes == 0) {
+                    printf("서버 연결 종료됨\n");
+                    break;
+                }
+                buffer[bytes] = '\0';
+                strcat(totalResponse, buffer);
+                // "##END##\n" 구분자가 포함되어 있으면 종료
+                if (strstr(totalResponse, "##END##\n") != NULL) {
+                    break;
+                }
+                memset(buffer, 0, BUF_SIZE);
+            }
+            
+            // 구분자 "##END##\n" 제거
+            char* delimiter = strstr(totalResponse, "##END##\n");
+            if (delimiter) {
+                *delimiter = '\0';
+            }
+            printf("도서 랭킹:\n%s\n", totalResponse);
         }
 
         // 5번 도서 정보 수정 기능
